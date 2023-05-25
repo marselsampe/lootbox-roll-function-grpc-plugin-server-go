@@ -40,7 +40,7 @@ It is configured by default to send metrics, traces, and logs to the observabili
 
     d. docker-compose v2
 
-    e. go v1.18
+    e. go v1.19
 
 2. A local copy of [grpc-plugin-dependencies](https://github.com/AccelByte/grpc-plugin-dependencies) repository.
 

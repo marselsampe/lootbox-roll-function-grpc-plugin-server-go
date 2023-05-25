@@ -19,6 +19,7 @@ type LootboxServiceServer struct {
 
 func NewLootboxServiceServer() *LootboxServiceServer {
 	rand.Seed(time.Now().Unix())
+
 	return &LootboxServiceServer{}
 }
 

@@ -4,7 +4,7 @@
 
 SHELL := /bin/bash
 
-GOLANG_DOCKER_IMAGE := golang:1.18
+GOLANG_DOCKER_IMAGE := golang:1.19
 IMAGE_NAME := $(shell basename "$$(pwd)")-app
 BUILDER := grpc-plugin-server-builder
 
