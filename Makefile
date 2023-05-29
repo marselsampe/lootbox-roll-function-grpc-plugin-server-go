@@ -40,6 +40,7 @@ imagex:
 
 imagex_push:
 	@test -n "$(IMAGE_VERSION)" || (echo "IMAGE_VERSION is not set"; exit 1)
+	@test -n "$(REPO_URL)" || (echo "REPO_URL is not set"; exit 1)
 	docker buildx inspect $(BUILDER) || docker buildx create --name $(BUILDER) --use
-	docker buildx build -t ${IMAGE_PREFIX}${IMAGE_NAME}:${IMAGE_VERSION} --platform linux/arm64/v8,linux/amd64 --push .
+	docker buildx build -t ${REPO_URL}:${IMAGE_VERSION} --platform linux/arm64/v8,linux/amd64 --push .
 	docker buildx rm --keep-state $(BUILDER)

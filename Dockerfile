@@ -7,7 +7,7 @@ RUN protoc --proto_path=pkg/proto --go_out=pkg/pb \
             --go-grpc_opt=paths=source_relative pkg/proto/*.proto
 
 
-FROM --platform=$BUILDPLATFORM golang:1.18-alpine as builder
+FROM --platform=$BUILDPLATFORM golang:1.19-alpine as builder
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /build
@@ -22,7 +22,6 @@ FROM alpine:3.17.0
 ARG TARGETOS
 ARG TARGETARCH
 WORKDIR /app
-ADD data data
 COPY --from=builder /build/loobox-roll-function-grpc-plugin-server-go_$TARGETOS-$TARGETARCH loobox-roll-function-grpc-plugin-server-go
 # Plugin arch gRPC server port
 EXPOSE 6565
