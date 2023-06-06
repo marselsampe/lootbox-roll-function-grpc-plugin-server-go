@@ -283,6 +283,7 @@ func (p *PlatformDataUnit) CreateLootboxItems(itemCount int, rewardItemCount int
 			return nil, err
 		}
 	}
+
 	return lootboxItems, nil
 }
 
@@ -379,6 +380,7 @@ func (p *PlatformDataUnit) GrantEntitlement(userID string, itemID string, count 
 	if len(entitlementInfo) <= 0 {
 		return "", fmt.Errorf("could not grant item to user")
 	}
+
 	return Val(entitlementInfo[0].ID), nil
 }
 
@@ -408,7 +410,7 @@ func (p *PlatformDataUnit) ConsumeItemEntitlement(userID string, entitlementID s
 	lootboxItem := SimpleLootboxItem{
 		ID: Val(result.ID),
 	}
-	var items []SimpleItemInfo
+	items := make([]SimpleItemInfo, len(result.Rewards))
 	for _, it := range result.Rewards {
 		items = append(items, SimpleItemInfo{
 			ID:  it.ItemID,
@@ -416,5 +418,6 @@ func (p *PlatformDataUnit) ConsumeItemEntitlement(userID string, entitlementID s
 		})
 	}
 	lootboxItem.RewardItems = items
+
 	return &lootboxItem, nil
 }

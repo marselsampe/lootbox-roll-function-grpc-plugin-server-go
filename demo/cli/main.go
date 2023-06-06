@@ -7,6 +7,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
+	"time"
 
 	"github.com/AccelByte/accelbyte-go-sdk/iam-sdk/pkg/iamclient/users"
 	"github.com/AccelByte/accelbyte-go-sdk/iam-sdk/pkg/iamclientmodels"
@@ -51,6 +53,7 @@ func main() {
 	}
 	fmt.Printf("\tUser: %s\n", userInfo.UserName)
 
+	rand.Seed(time.Now().Unix())
 	// Start testing
 	err = startTesting(userInfo, config, configRepo, tokenRepo)
 	if err != nil {
@@ -65,7 +68,6 @@ func startTesting(
 	config *lootboxrolldemo.Config,
 	configRepo repository.ConfigRepository,
 	tokenRepo repository.TokenRepository) error {
-
 	categoryPath := "/goLootboxRollPluginDemo"
 	pdu := lootboxrolldemo.PlatformDataUnit{
 		CLIConfig:    config,
