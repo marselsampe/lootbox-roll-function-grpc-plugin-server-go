@@ -6,6 +6,8 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -23,7 +25,8 @@ func NewLootboxServiceServer() *LootboxServiceServer {
 	return &LootboxServiceServer{}
 }
 
-func (s *LootboxServiceServer) RollLootBoxRewards(ctx context.Context, req *pb.RollLootBoxRewardsRequest) (*pb.RollLootBoxRewardsResponse, error) {
+func (s *LootboxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.RollLootBoxRewardsRequest) (*pb.RollLootBoxRewardsResponse, error) {
+	logJSON("RollLootBoxRewards Request: ", req)
 	rewards := req.GetItemInfo().GetLootBoxRewards()
 	rewardWeightSum := 0
 	for _, r := range rewards {
@@ -53,9 +56,19 @@ func (s *LootboxServiceServer) RollLootBoxRewards(ctx context.Context, req *pb.R
 		})
 	}
 
-	return &pb.RollLootBoxRewardsResponse{Rewards: finalItems}, nil
+	response := &pb.RollLootBoxRewardsResponse{Rewards: finalItems}
+	logJSON("RollLootBoxRewards Response: ", response)
+
+	return response, nil
 }
 
 func random(max int) float64 {
 	return rand.Float64() * float64(max)
+}
+
+func logJSON(prefix string, jsonData interface{}) {
+	r, _ := json.MarshalIndent(jsonData, "", "  ")
+	if r != nil {
+		fmt.Printf("%s%s\n", prefix, r)
+	}
 }
