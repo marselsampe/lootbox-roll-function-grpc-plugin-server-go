@@ -86,27 +86,31 @@ func startTesting(
 		}
 		fmt.Println("[OK]")
 
-		err = pdu.UnsetPlatformServiceGrpcTarget()
-		if err != nil {
-			fmt.Printf("failed to unset platform service grpc plugin url")
+		if config.GRPCServerURL != "" {
+			err = pdu.UnsetPlatformServiceGrpcTarget()
+			if err != nil {
+				fmt.Printf("failed to unset platform service grpc plugin url")
 
-			return
+				return
+			}
 		}
 	}()
 
 	// 1.
-	fmt.Printf("Configuring platform service grpc target... (%s) ", config.GRPCServerURL)
-	err := pdu.SetPlatformServiceGrpcTarget()
-	if err != nil {
-		fmt.Println("[ERR]")
+	if config.GRPCServerURL != "" {
+		fmt.Printf("Configuring platform service grpc target... (%s) ", config.GRPCServerURL)
+		err := pdu.SetPlatformServiceGrpcTarget()
+		if err != nil {
+			fmt.Println("[ERR]")
 
-		return err
+			return err
+		}
+		fmt.Println("[OK]")
 	}
-	fmt.Println("[OK]")
 
 	// 2.
 	fmt.Print("Creating store... ")
-	err = pdu.CreateStore(true)
+	err := pdu.CreateStore(true)
 	if err != nil {
 		fmt.Println("[ERR]")
 

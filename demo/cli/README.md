@@ -1,5 +1,7 @@
 # Platform Service's Lootbox Roll Plugin gRPC Demo App (Go)
 
+## Overview
+
 This is CLI program to test the usage of custom plugin lootbox roll function configuration on AccelByte environment
 
 ## Prerequisites
@@ -7,9 +9,7 @@ This is CLI program to test the usage of custom plugin lootbox roll function con
 - Docker
 - make
 
-## Usage
-
-### Setup
+## Setup
 
 The following environment variables are used by this CLI demo app.
 
@@ -23,11 +23,9 @@ AB_CLIENT_SECRET='<AccelByte IAM Client Secret>'
 AB_NAMESPACE='namespace'
 AB_USERNAME='<AccelByte account username>'
 AB_PASSWORD='<AccelByte account password>'
-
-GRPC_SERVER_URL='<gRPC server url accessible by internet>'
 ```
 
-### Run 
+## Run 
 
 Run the demo test cli using makefile with provided `.env` file containing required variables
 
