@@ -33,30 +33,30 @@ func (s *LootboxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.Rol
 		rewardWeightSum += int(r.Weight)
 	}
 
-	var finalItems []*pb.RewardObject
+	var resultItems []*pb.RewardObject
 	for i := int32(0); i < req.GetQuantity(); i++ {
-		selIdx := 0
-		for r := int(random(rewardWeightSum)); selIdx < len(rewards); selIdx++ {
-			r -= int(rewards[selIdx].GetWeight())
+		selectedIdx := 0
+		for r := int(random(rewardWeightSum)); selectedIdx < len(rewards); selectedIdx++ {
+			r -= int(rewards[selectedIdx].GetWeight())
 			if r <= 0.0 {
 				break
 			}
 		}
 
-		selReward := rewards[selIdx]
-		itemCount := len(selReward.GetItems())
+		selectedReward := rewards[selectedIdx]
+		selectedRewardItemCount := len(selectedReward.GetItems())
 
-		selItemIdx := int(math.Round(random(itemCount - 1)))
-		selItem := selReward.GetItems()[selItemIdx]
+		selectedItemIdx := int(math.Round(random(selectedRewardItemCount - 1)))
+		selectedItem := selectedReward.GetItems()[selectedItemIdx]
 
-		finalItems = append(finalItems, &pb.RewardObject{
-			ItemId:  selItem.ItemId,
-			ItemSku: selItem.ItemSku,
-			Count:   selItem.Count,
+		resultItems = append(resultItems, &pb.RewardObject{
+			ItemId:  selectedItem.ItemId,
+			ItemSku: selectedItem.ItemSku,
+			Count:   selectedItem.Count,
 		})
 	}
 
-	response := &pb.RollLootBoxRewardsResponse{Rewards: finalItems}
+	response := &pb.RollLootBoxRewardsResponse{Rewards: resultItems}
 	logJSON("RollLootBoxRewards Response: ", response)
 
 	return response, nil
