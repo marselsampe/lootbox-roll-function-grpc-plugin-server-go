@@ -44,6 +44,7 @@ type PlatformDataUnit struct {
 func (p *PlatformDataUnit) SetPlatformServiceGrpcTarget() error {
 	if p.CLIConfig.GRPCServerURL != "" {
 		fmt.Printf("(Custom Host: %s) ", p.CLIConfig.GRPCServerURL)
+
 		return p.PlatformClientSvc.UpdateLootBoxPluginConfig(p.CLIConfig.ABNamespace, &models.LootBoxPluginConfigUpdate{
 			ExtendType: Ptr(models.LootBoxPluginConfigUpdateExtendTypeCUSTOM),
 			CustomConfig: &models.BaseCustomConfig{
@@ -55,6 +56,7 @@ func (p *PlatformDataUnit) SetPlatformServiceGrpcTarget() error {
 
 	if p.CLIConfig.ExtendAppName != "" {
 		fmt.Printf("(Extend App: %s) ", p.CLIConfig.ExtendAppName)
+
 		return p.PlatformClientSvc.UpdateLootBoxPluginConfig(p.CLIConfig.ABNamespace, &models.LootBoxPluginConfigUpdate{
 			ExtendType: Ptr(models.LootBoxPluginConfigUpdateExtendTypeAPP),
 			AppConfig: &models.AppConfig{

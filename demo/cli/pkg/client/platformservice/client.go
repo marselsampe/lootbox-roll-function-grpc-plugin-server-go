@@ -29,6 +29,7 @@ func NewClient(serviceAddress string, tokenRepo repository.TokenRepository) (*Cl
 		return nil, err
 	}
 	platformSvcClient := client.New(httptransport.New(u.Host, "platform", []string{u.Scheme}), strfmt.Default)
+
 	return &Client{
 		tokenRepo:         tokenRepo,
 		platformSvcClient: platformSvcClient,
@@ -50,6 +51,7 @@ func (c *Client) UpdateLootBoxPluginConfig(namespace string, config *models.Loot
 		Body:      config,
 		Context:   ctx,
 	}, bearerToken)
+
 	return err
 }
 
@@ -67,5 +69,6 @@ func (c *Client) DeleteLootBoxPluginConfig(namespace string) error {
 		Namespace: namespace,
 		Context:   ctx,
 	}, bearerToken)
+
 	return err
 }
