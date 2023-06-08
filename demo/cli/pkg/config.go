@@ -14,6 +14,7 @@ type Config struct {
 	ABUsername     string `env:"AB_USERNAME"`
 	ABPassword     string `env:"AB_PASSWORD"`
 	GRPCServerURL  string `env:"GRPC_SERVER_URL"`
+	ExtendAppName  string `env:"EXTEND_APP_NAME"`
 }
 
 func GetConfig() (*Config, error) {

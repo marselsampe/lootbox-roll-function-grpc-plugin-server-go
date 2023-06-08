@@ -9,15 +9,18 @@ import (
 
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/catalog_changes"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/category"
+	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/currency"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/entitlement"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/item"
-	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/service_plugin_config"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/store"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclientmodels"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/repository"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/platform"
 	"github.com/pkg/errors"
+
+	"cli/pkg/client/platformservice"
+	"cli/pkg/client/platformservice/openapi2/models"
 )
 
 const ALPHA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -30,33 +33,39 @@ var (
 var errEmptyStoreID = errors.New("error empty store id, createStore first")
 
 type PlatformDataUnit struct {
-	CLIConfig    *Config
-	ConfigRepo   repository.ConfigRepository
-	TokenRepo    repository.TokenRepository
-	storeID      string
-	CurrencyCode string
+	CLIConfig         *Config
+	ConfigRepo        repository.ConfigRepository
+	TokenRepo         repository.TokenRepository
+	PlatformClientSvc *platformservice.Client
+	storeID           string
+	CurrencyCode      string
 }
 
 func (p *PlatformDataUnit) SetPlatformServiceGrpcTarget() error {
-	grpcServerUrl := p.CLIConfig.GRPCServerURL
-	if grpcServerUrl == "" {
-		return errors.New("gRPC server url can't be empty")
+	if p.CLIConfig.GRPCServerURL != "" {
+		fmt.Printf("(Custom Host: %s) ", p.CLIConfig.GRPCServerURL)
+
+		return p.PlatformClientSvc.UpdateLootBoxPluginConfig(p.CLIConfig.ABNamespace, &models.LootBoxPluginConfigUpdate{
+			ExtendType: Ptr(models.LootBoxPluginConfigUpdateExtendTypeCUSTOM),
+			CustomConfig: &models.BaseCustomConfig{
+				ConnectionType:    Ptr(models.BaseCustomConfigConnectionTypeINSECURE),
+				GrpcServerAddress: Ptr(p.CLIConfig.GRPCServerURL),
+			},
+		})
 	}
 
-	wrapper := platform.ServicePluginConfigService{
-		Client:           factory.NewPlatformClient(p.ConfigRepo),
-		ConfigRepository: p.ConfigRepo,
-		TokenRepository:  p.TokenRepo,
-	}
-	// call https://demo.accelbyte.io/platform/apidocs/#/ServicePluginConfig/updateServicePluginConfig
-	_, err := wrapper.UpdateServicePluginConfigShort(&service_plugin_config.UpdateServicePluginConfigParams{
-		Body: &platformclientmodels.ServicePluginConfigUpdate{
-			GrpcServerAddress: grpcServerUrl,
-		},
-		Namespace: p.CLIConfig.ABNamespace,
-	})
+	if p.CLIConfig.ExtendAppName != "" {
+		fmt.Printf("(Extend App: %s) ", p.CLIConfig.ExtendAppName)
 
-	return err
+		return p.PlatformClientSvc.UpdateLootBoxPluginConfig(p.CLIConfig.ABNamespace, &models.LootBoxPluginConfigUpdate{
+			ExtendType: Ptr(models.LootBoxPluginConfigUpdateExtendTypeAPP),
+			AppConfig: &models.AppConfig{
+				AppName: Ptr(p.CLIConfig.ExtendAppName),
+			},
+		})
+	}
+
+	return nil
 }
 
 func (p *PlatformDataUnit) CreateStore(doPublish bool) error {
@@ -153,16 +162,50 @@ func (p *PlatformDataUnit) CreateCategory(categoryPath string, doPublish bool) e
 	return nil
 }
 
-func (p *PlatformDataUnit) UnsetPlatformServiceGrpcTarget() error {
-	wrapper := platform.ServicePluginConfigService{
+func (p *PlatformDataUnit) CreateCurrency() error {
+	currencyWrapper := platform.CurrencyService{
 		Client:           factory.NewPlatformClient(p.ConfigRepo),
 		ConfigRepository: p.ConfigRepo,
 		TokenRepository:  p.TokenRepo,
 	}
-
-	return wrapper.DeleteServicePluginConfigShort(&service_plugin_config.DeleteServicePluginConfigParams{
-		Namespace: p.CLIConfig.ABNamespace,
+	curr, err := currencyWrapper.GetCurrencySummaryShort(&currency.GetCurrencySummaryParams{
+		CurrencyCode: p.CurrencyCode,
+		Namespace:    p.CLIConfig.ABNamespace,
 	})
+	if err == nil && curr != nil {
+		// already exists
+		return nil
+	}
+
+	_, err = currencyWrapper.CreateCurrencyShort(&currency.CreateCurrencyParams{
+		Namespace: p.CLIConfig.ABNamespace,
+		Body: &platformclientmodels.CurrencyCreate{
+			CurrencyCode:   Ptr(p.CurrencyCode),
+			CurrencySymbol: "$",
+			CurrencyType:   platformclientmodels.CurrencyCreateCurrencyTypeREAL,
+			Decimals:       2,
+		},
+	})
+
+	return err
+}
+
+func (p *PlatformDataUnit) DeleteCurrency() error {
+	currencyWrapper := platform.CurrencyService{
+		Client:           factory.NewPlatformClient(p.ConfigRepo),
+		ConfigRepository: p.ConfigRepo,
+		TokenRepository:  p.TokenRepo,
+	}
+	_, err := currencyWrapper.DeleteCurrencyShort(&currency.DeleteCurrencyParams{
+		Namespace:    p.CLIConfig.ABNamespace,
+		CurrencyCode: p.CurrencyCode,
+	})
+
+	return err
+}
+
+func (p *PlatformDataUnit) UnsetPlatformServiceGrpcTarget() error {
+	return p.PlatformClientSvc.DeleteLootBoxPluginConfig(p.CLIConfig.ABNamespace)
 }
 
 func (p *PlatformDataUnit) DeleteStore() error {

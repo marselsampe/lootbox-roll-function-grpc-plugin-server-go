@@ -18,6 +18,7 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
 
 	lootboxrolldemo "cli/pkg"
+	"cli/pkg/client/platformservice"
 )
 
 func main() {
@@ -33,6 +34,10 @@ func main() {
 		Client:           factory.NewIamClient(configRepo),
 		ConfigRepository: configRepo,
 		TokenRepository:  tokenRepo,
+	}
+	lootboxConfigClient, err := platformservice.NewClient(config.ABBaseURL, oauthService.TokenRepository)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	fmt.Print("Login to AccelByte... ")
@@ -55,7 +60,7 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 	// Start testing
-	err = startTesting(userInfo, config, configRepo, tokenRepo)
+	err = startTesting(userInfo, config, configRepo, tokenRepo, lootboxConfigClient)
 	if err != nil {
 		fmt.Println("\n[FAILED]")
 		log.Fatal(err)
@@ -67,20 +72,29 @@ func startTesting(
 	userInfo *iamclientmodels.ModelUserResponseV3,
 	config *lootboxrolldemo.Config,
 	configRepo repository.ConfigRepository,
-	tokenRepo repository.TokenRepository) error {
+	tokenRepo repository.TokenRepository,
+	client *platformservice.Client) error {
 	categoryPath := "/goLootboxRollPluginDemo"
 	pdu := lootboxrolldemo.PlatformDataUnit{
-		CLIConfig:    config,
-		ConfigRepo:   configRepo,
-		TokenRepo:    tokenRepo,
-		CurrencyCode: "USD",
+		CLIConfig:         config,
+		ConfigRepo:        configRepo,
+		TokenRepo:         tokenRepo,
+		PlatformClientSvc: client,
+		CurrencyCode:      "USD",
 	}
 
 	// clean up
 	defer func() {
 		fmt.Println("\nCleaning up...")
+		fmt.Print("Deleting currency... ")
+		err := pdu.DeleteCurrency()
+		if err != nil {
+			return
+		}
+		fmt.Println("[OK]")
+
 		fmt.Print("Deleting store... ")
-		err := pdu.DeleteStore()
+		err = pdu.DeleteStore()
 		if err != nil {
 			return
 		}
@@ -97,20 +111,18 @@ func startTesting(
 	}()
 
 	// 1.
-	if config.GRPCServerURL != "" {
-		fmt.Printf("Configuring platform service grpc target... (%s) ", config.GRPCServerURL)
-		err := pdu.SetPlatformServiceGrpcTarget()
-		if err != nil {
-			fmt.Println("[ERR]")
+	fmt.Print("Configuring platform service grpc target... ")
+	err := pdu.SetPlatformServiceGrpcTarget()
+	if err != nil {
+		fmt.Println("[ERR]")
 
-			return err
-		}
-		fmt.Println("[OK]")
+		return err
 	}
+	fmt.Println("[OK]")
 
 	// 2.
 	fmt.Print("Creating store... ")
-	err := pdu.CreateStore(true)
+	err = pdu.CreateStore(true)
 	if err != nil {
 		fmt.Println("[ERR]")
 
@@ -124,6 +136,14 @@ func startTesting(
 	if err != nil {
 		fmt.Println("[ERR]")
 
+		return err
+	}
+	fmt.Println("[OK]")
+
+	// 4.
+	fmt.Printf("Setting up currency (%s)... ", pdu.CurrencyCode)
+	err = pdu.CreateCurrency()
+	if err != nil {
 		return err
 	}
 	fmt.Println("[OK]")
