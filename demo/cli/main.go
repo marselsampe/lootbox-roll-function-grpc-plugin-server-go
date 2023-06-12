@@ -80,7 +80,7 @@ func startTesting(
 		ConfigRepo:        configRepo,
 		TokenRepo:         tokenRepo,
 		PlatformClientSvc: client,
-		CurrencyCode:      "USD",
+		CurrencyCode:      "USDT1",
 	}
 
 	// clean up

@@ -181,7 +181,7 @@ func (p *PlatformDataUnit) CreateCurrency() error {
 		Namespace: p.CLIConfig.ABNamespace,
 		Body: &platformclientmodels.CurrencyCreate{
 			CurrencyCode:   Ptr(p.CurrencyCode),
-			CurrencySymbol: "$",
+			CurrencySymbol: "USDT1$",
 			CurrencyType:   platformclientmodels.CurrencyCreateCurrencyTypeREAL,
 			Decimals:       2,
 		},
