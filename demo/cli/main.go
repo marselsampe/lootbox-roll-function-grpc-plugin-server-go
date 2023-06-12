@@ -80,15 +80,21 @@ func startTesting(
 		ConfigRepo:        configRepo,
 		TokenRepo:         tokenRepo,
 		PlatformClientSvc: client,
-		CurrencyCode:      "USD",
+		CurrencyCode:      "USDT1",
 	}
 
 	// clean up
 	defer func() {
 		fmt.Println("\nCleaning up...")
+		fmt.Print("Deleting currency... ")
+		err := pdu.DeleteCurrency()
+		if err != nil {
+			return
+		}
+		fmt.Println("[OK]")
 
 		fmt.Print("Deleting store... ")
-		err := pdu.DeleteStore()
+		err = pdu.DeleteStore()
 		if err != nil {
 			return
 		}

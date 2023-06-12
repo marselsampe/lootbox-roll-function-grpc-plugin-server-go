@@ -181,10 +181,24 @@ func (p *PlatformDataUnit) CreateCurrency() error {
 		Namespace: p.CLIConfig.ABNamespace,
 		Body: &platformclientmodels.CurrencyCreate{
 			CurrencyCode:   Ptr(p.CurrencyCode),
-			CurrencySymbol: "$",
+			CurrencySymbol: "USDT1$",
 			CurrencyType:   platformclientmodels.CurrencyCreateCurrencyTypeREAL,
 			Decimals:       2,
 		},
+	})
+
+	return err
+}
+
+func (p *PlatformDataUnit) DeleteCurrency() error {
+	currencyWrapper := platform.CurrencyService{
+		Client:           factory.NewPlatformClient(p.ConfigRepo),
+		ConfigRepository: p.ConfigRepo,
+		TokenRepository:  p.TokenRepo,
+	}
+	_, err := currencyWrapper.DeleteCurrencyShort(&currency.DeleteCurrencyParams{
+		Namespace:    p.CLIConfig.ABNamespace,
+		CurrencyCode: p.CurrencyCode,
 	})
 
 	return err
