@@ -4,6 +4,8 @@
 
 This is CLI program to test the usage of custom plugin lootbox roll function configuration on AccelByte environment
 
+> Please note that this script will delete and recreate your e-commerce store draft in your specified namespace 
+
 ## Prerequisites
 
 - Docker

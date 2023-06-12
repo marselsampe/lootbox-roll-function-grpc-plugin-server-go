@@ -190,20 +190,6 @@ func (p *PlatformDataUnit) CreateCurrency() error {
 	return err
 }
 
-func (p *PlatformDataUnit) DeleteCurrency() error {
-	currencyWrapper := platform.CurrencyService{
-		Client:           factory.NewPlatformClient(p.ConfigRepo),
-		ConfigRepository: p.ConfigRepo,
-		TokenRepository:  p.TokenRepo,
-	}
-	_, err := currencyWrapper.DeleteCurrencyShort(&currency.DeleteCurrencyParams{
-		Namespace:    p.CLIConfig.ABNamespace,
-		CurrencyCode: p.CurrencyCode,
-	})
-
-	return err
-}
-
 func (p *PlatformDataUnit) UnsetPlatformServiceGrpcTarget() error {
 	return p.PlatformClientSvc.DeleteLootBoxPluginConfig(p.CLIConfig.ABNamespace)
 }
