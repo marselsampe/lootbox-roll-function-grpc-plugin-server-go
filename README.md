@@ -36,9 +36,9 @@ It is configured by default to send metrics, traces, and logs to the observabili
 
     b. make
 
-    c. docker
+    c. docker v23.x
 
-    d. docker-compose v2
+    d. docker-compose v2.x
 
     e. go v1.19
 
@@ -116,7 +116,7 @@ The custom functions in this sample app can be tested locally using `postman`.
 
 2. Start this `gRPC server` sample app.
 
-3. Open `postman`, create a new `gRPC request`, and enter `localhost:10000` as server URL. 
+3. Open `postman`, create a new `gRPC request` (tutorial [here](https://blog.postman.com/postman-now-supports-grpc/)), and enter `localhost:10000` as server URL. 
 
    > :exclamation: We are essentially accessing the `gRPC server` through an `Envoy` proxy which is a part of `dependency services`.
 
@@ -191,10 +191,58 @@ The custom functions in this sample app can be tested locally using `postman`.
    }
    ```
 
-### Test Functionality using CLI Demo App
+### Integration Test with AccelByte Gaming Services
 
-The functionality of `gRPC server` methods can be tested with AccelByte Gaming Service using CLI demo app [here](demo/cli/).
-Read its [readme](demo/cli/README.md) on how to use it.
+After passing functional test in local development environment, you may want to perform
+integration test with `AccelByte Gaming Services`. Here, we are going to expose the `gRPC server`
+in local development environment to the internet so that it can be called by
+`AccelByte Gaming Services`. To do this without requiring public IP, we can use [ngrok](https://ngrok.com/)
+
+
+1. Start the `dependency services` by following the `README.md` in the [grpc-plugin-dependencies](https://github.com/AccelByte/grpc-plugin-dependencies) repository.
+
+   > :warning: **Make sure to start dependency services with mTLS disabled for now**: It is currently not supported by AccelByte Gaming Services but it will be enabled later on to improve security. If it is enabled, the gRPC client calls without mTLS will be rejected by Envoy proxy.
+
+
+2. Start this `gRPC server` sample app.
+
+3. Sign-in/sign-up to [ngrok](https://ngrok.com/) and get your auth token in `ngrok` dashboard.
+
+4. In [grpc-plugin-dependencies](https://github.com/AccelByte/grpc-plugin-dependencies) repository folder, run the following command to expose the `Envoy` proxy port connected to the `gRPC server` in local development environment to the internet. Take a note of the `ngrok` forwarding URL e.g. `tcp://0.tcp.ap.ngrok.io:xxxxx`.
+
+   ```
+   make ngrok NGROK_AUTHTOKEN=xxxxxxxxxxx    # Use your ngrok auth token
+   ```
+
+5. [Create an OAuth Client](https://docs.accelbyte.io/guides/access/iam-client.html) with `confidential` client type with the following permissions. Keep the `Client ID` and `Client Secret`. This is different from the Oauth Client from the Setup section and it is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
+
+   - ADMIN:NAMESPACE:{namespace}:PLUGIN:REVOCATION - UPDATE, DELETE
+   - ADMIN:NAMESPACE:{namespace}:PLUGIN:CATALOG - READ, UPDATE, DELETE
+   - ADMIN:NAMESPACE:{namespace}:STORE - CREATE, READ, UPDATE, DELETE
+   - ADMIN:NAMESPACE:{namespace}:CATEGORY - CREATE
+   - ADMIN:NAMESPACE:{namespace}:CURRENCY - CREATE, DELETE
+   - ADMIN:NAMESPACE:{namespace}:ITEM - CREATE, DELETE
+   - ADMIN:NAMESPACE:{namespace}:USER:*:ENTITLEMENT - CREATE, UPDATE, DELETE
+
+   > :warning: **Oauth Client created in this step is different from the one from Setup section:** It is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
+
+6. Create a user for testing. Keep the `Username` and `Password`.
+
+7. Set the necessary environment variables in [.env.example](demo/cli/.env.example) and run the [Makefile](Makefile) CLI command. The CLI will set up the necessary configuration and then give you instructions on how to configure platform service. If successful, the word `[SUCCESS]` will be print out in the terminal.
+
+   ```
+   cd demo/cli
+   export AB_BASE_URL='https://demo.accelbyte.io'
+   export AB_CLIENT_ID='xxxxxxxxxx'       # Use Client ID from the previous step
+   export AB_CLIENT_SECRET='xxxxxxxxxx'   # Use Client secret from the previous step
+   export AB_NAMESPACE='xxxxxxxxxx'       # Use your Namespace ID
+   export AB_USERNAME='xxxxxxxxxx'       # Use your Namespace Username
+   export AB_PASSWORD='xxxxxxxxxx'       # Use your Namespace Password
+   export GRPC_SERVER_URL='0.tcp.ap.ngrok.io:xxxxx'   # Use your ngrok forwarding URL without `https://`
+   make run ENV_FILE_PATH=.env.example
+   ```
+
+> :warning: **Ngrok free plan has some limitations**: You may want to use paid plan if the traffic is high.
 
 ## Advanced
 
