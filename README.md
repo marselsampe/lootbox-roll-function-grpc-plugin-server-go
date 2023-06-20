@@ -216,7 +216,6 @@ in local development environment to the internet so that it can be called by
 
 5. [Create an OAuth Client](https://docs.accelbyte.io/guides/access/iam-client.html) with `confidential` client type with the following permissions. Keep the `Client ID` and `Client Secret`. This is different from the Oauth Client from the Setup section and it is required by CLI demo app [here](demo/cli/) in the next step to register the `gRPC Server` URL.
 
-   - ADMIN:NAMESPACE:{namespace}:PLUGIN:REVOCATION - UPDATE, DELETE
    - ADMIN:NAMESPACE:{namespace}:PLUGIN:CATALOG - READ, UPDATE, DELETE
    - ADMIN:NAMESPACE:{namespace}:STORE - CREATE, READ, UPDATE, DELETE
    - ADMIN:NAMESPACE:{namespace}:CATEGORY - CREATE

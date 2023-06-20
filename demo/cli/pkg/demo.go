@@ -26,8 +26,8 @@ import (
 const ALPHA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 var (
-	abStoreName = "GO Revocation Plugin Demo Store"
-	abStoreDesc = "GO Description for revocation grpc plugin demo store"
+	abStoreName = "GO Lootbox Plugin Demo Store"
+	abStoreDesc = "GO Description for Lootbox grpc plugin demo store"
 )
 
 var errEmptyStoreID = errors.New("error empty store id, createStore first")
