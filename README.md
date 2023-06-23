@@ -32,25 +32,27 @@ It is configured by default to send metrics, traces, and logs to the observabili
 
 1. Windows 10 WSL2 or Linux Ubuntu 20.04 with the following tools installed.
 
-    a. bash
+   a. bash
 
-    b. make
+   b. make
 
-    c. docker v23.x
+   c. docker v23.x
 
-    d. docker-compose v2.x
+   d. docker-compose v2.x
 
-    e. docker loki driver
+   e. docker loki driver
 
-       docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+      ```
+      docker plugin install grafana/loki-docker-driver:latest --alias loki --grant-all-permissions
+      ```
 
-    f. go 1.19
+   f. go 1.19
 
-    g. git
+   g. git
 
-    h. [ngrok](https://ngrok.com/)
+   h. [ngrok](https://ngrok.com/)
 
-    i. [postman](https://www.postman.com/)
+   i. [postman](https://www.postman.com/)
 
 2. A local copy of [grpc-plugin-dependencies](https://github.com/AccelByte/grpc-plugin-dependencies) repository.
 
