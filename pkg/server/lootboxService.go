@@ -6,11 +6,11 @@ package server
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"math"
 	"math/rand"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	pb "lootbox-roll-function-grpc-plugin-server-go/pkg/pb"
 )
@@ -26,7 +26,7 @@ func NewLootboxServiceServer() *LootboxServiceServer {
 }
 
 func (s *LootboxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.RollLootBoxRewardsRequest) (*pb.RollLootBoxRewardsResponse, error) {
-	logJSON("RollLootBoxRewards Request: ", req)
+	logrus.Infof("RollLootBoxRewards Request: %s", LogJSONFormatter(req))
 	rewards := req.GetItemInfo().GetLootBoxRewards()
 	rewardWeightSum := 0
 	for _, r := range rewards {
@@ -57,18 +57,11 @@ func (s *LootboxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.Rol
 	}
 
 	response := &pb.RollLootBoxRewardsResponse{Rewards: resultItems}
-	logJSON("RollLootBoxRewards Response: ", response)
+	logrus.Infof("RollLootBoxRewards Response: %s", LogJSONFormatter(response))
 
 	return response, nil
 }
 
 func random(max int) float64 {
 	return rand.Float64() * float64(max)
-}
-
-func logJSON(prefix string, jsonData interface{}) {
-	r, _ := json.MarshalIndent(jsonData, "", "  ")
-	if r != nil {
-		fmt.Printf("%s%s\n", prefix, r)
-	}
 }

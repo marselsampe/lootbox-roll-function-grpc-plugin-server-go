@@ -6,6 +6,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
@@ -37,4 +38,18 @@ func InterceptorLogger(l logrus.FieldLogger) logging.Logger {
 			panic(fmt.Sprintf("unknown level %v", lvl))
 		}
 	})
+}
+
+// LogJSONFormatter is printing the data in log
+func LogJSONFormatter(data interface{}) string {
+	response, err := json.Marshal(data)
+	if err != nil {
+		logrus.Errorf("failed to marshal json.")
+
+		return ""
+	} else {
+		logrus.SetFormatter(&logrus.JSONFormatter{PrettyPrint: true})
+
+		return string(response)
+	}
 }
