@@ -3,7 +3,7 @@ module cli
 go 1.19
 
 require (
-	github.com/AccelByte/accelbyte-go-sdk v0.45.0
+	github.com/AccelByte/accelbyte-go-sdk v0.48.0
 	github.com/caarlos0/env/v7 v7.1.0
 	github.com/go-openapi/errors v0.20.3
 	github.com/go-openapi/runtime v0.19.29

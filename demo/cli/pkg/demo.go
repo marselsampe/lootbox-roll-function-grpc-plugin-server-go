@@ -12,15 +12,13 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/currency"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/entitlement"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/item"
+	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/service_plugin_config"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclient/store"
 	"github.com/AccelByte/accelbyte-go-sdk/platform-sdk/pkg/platformclientmodels"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/repository"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/platform"
 	"github.com/pkg/errors"
-
-	"cli/pkg/client/platformservice"
-	"cli/pkg/client/platformservice/openapi2/models"
 )
 
 const ALPHA_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -33,36 +31,51 @@ var (
 var errEmptyStoreID = errors.New("error empty store id, createStore first")
 
 type PlatformDataUnit struct {
-	CLIConfig         *Config
-	ConfigRepo        repository.ConfigRepository
-	TokenRepo         repository.TokenRepository
-	PlatformClientSvc *platformservice.Client
-	storeID           string
-	CurrencyCode      string
+	CLIConfig    *Config
+	ConfigRepo   repository.ConfigRepository
+	TokenRepo    repository.TokenRepository
+	storeID      string
+	CurrencyCode string
 }
 
 func (p *PlatformDataUnit) SetPlatformServiceGrpcTarget() error {
+	servicePluginCfgWrapper := platform.ServicePluginConfigService{
+		Client:           factory.NewPlatformClient(p.ConfigRepo),
+		ConfigRepository: p.ConfigRepo,
+		TokenRepository:  p.TokenRepo,
+	}
+
 	if p.CLIConfig.GRPCServerURL != "" {
 		fmt.Printf("(Custom Host: %s) ", p.CLIConfig.GRPCServerURL)
 
-		return p.PlatformClientSvc.UpdateLootBoxPluginConfig(p.CLIConfig.ABNamespace, &models.LootBoxPluginConfigUpdate{
-			ExtendType: Ptr(models.LootBoxPluginConfigUpdateExtendTypeCUSTOM),
-			CustomConfig: &models.BaseCustomConfig{
-				ConnectionType:    Ptr(models.BaseCustomConfigConnectionTypeINSECURE),
-				GrpcServerAddress: Ptr(p.CLIConfig.GRPCServerURL),
+		_, err := servicePluginCfgWrapper.UpdateLootBoxPluginConfigShort(&service_plugin_config.UpdateLootBoxPluginConfigParams{
+			Namespace: p.CLIConfig.ABNamespace,
+			Body: &platformclientmodels.LootBoxPluginConfigUpdate{
+				ExtendType: Ptr(platformclientmodels.LootBoxPluginConfigUpdateExtendTypeCUSTOM),
+				CustomConfig: &platformclientmodels.BaseCustomConfig{
+					ConnectionType:    Ptr(platformclientmodels.BaseCustomConfigConnectionTypeINSECURE),
+					GrpcServerAddress: Ptr(p.CLIConfig.GRPCServerURL),
+				},
 			},
 		})
+
+		return err
 	}
 
 	if p.CLIConfig.ExtendAppName != "" {
 		fmt.Printf("(Extend App: %s) ", p.CLIConfig.ExtendAppName)
 
-		return p.PlatformClientSvc.UpdateLootBoxPluginConfig(p.CLIConfig.ABNamespace, &models.LootBoxPluginConfigUpdate{
-			ExtendType: Ptr(models.LootBoxPluginConfigUpdateExtendTypeAPP),
-			AppConfig: &models.AppConfig{
-				AppName: Ptr(p.CLIConfig.ExtendAppName),
+		_, err := servicePluginCfgWrapper.UpdateLootBoxPluginConfigShort(&service_plugin_config.UpdateLootBoxPluginConfigParams{
+			Namespace: p.CLIConfig.ABNamespace,
+			Body: &platformclientmodels.LootBoxPluginConfigUpdate{
+				ExtendType: Ptr(platformclientmodels.LootBoxPluginConfigUpdateExtendTypeAPP),
+				AppConfig: &platformclientmodels.AppConfig{
+					AppName: Ptr(p.CLIConfig.ExtendAppName),
+				},
 			},
 		})
+
+		return err
 	}
 
 	return nil
@@ -205,7 +218,14 @@ func (p *PlatformDataUnit) DeleteCurrency() error {
 }
 
 func (p *PlatformDataUnit) UnsetPlatformServiceGrpcTarget() error {
-	return p.PlatformClientSvc.DeleteLootBoxPluginConfig(p.CLIConfig.ABNamespace)
+	servicePluginCfgWrapper := platform.ServicePluginConfigService{
+		Client:           factory.NewPlatformClient(p.ConfigRepo),
+		ConfigRepository: p.ConfigRepo,
+		TokenRepository:  p.TokenRepo,
+	}
+	return servicePluginCfgWrapper.DeleteLootBoxPluginConfigShort(&service_plugin_config.DeleteLootBoxPluginConfigParams{
+		Namespace: p.CLIConfig.ABNamespace,
+	})
 }
 
 func (p *PlatformDataUnit) DeleteStore() error {

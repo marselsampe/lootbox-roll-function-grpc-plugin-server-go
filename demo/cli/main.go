@@ -18,7 +18,6 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
 
 	lootboxrolldemo "cli/pkg"
-	"cli/pkg/client/platformservice"
 )
 
 func main() {
@@ -34,10 +33,6 @@ func main() {
 		Client:           factory.NewIamClient(configRepo),
 		ConfigRepository: configRepo,
 		TokenRepository:  tokenRepo,
-	}
-	lootboxConfigClient, err := platformservice.NewClient(config.ABBaseURL, oauthService.TokenRepository)
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	fmt.Print("Login to AccelByte... ")
@@ -60,7 +55,7 @@ func main() {
 
 	rand.Seed(time.Now().Unix())
 	// Start testing
-	err = startTesting(userInfo, config, configRepo, tokenRepo, lootboxConfigClient)
+	err = startTesting(userInfo, config, configRepo, tokenRepo)
 	if err != nil {
 		fmt.Println("\n[FAILED]")
 		log.Fatal(err)
@@ -72,15 +67,13 @@ func startTesting(
 	userInfo *iamclientmodels.ModelUserResponseV3,
 	config *lootboxrolldemo.Config,
 	configRepo repository.ConfigRepository,
-	tokenRepo repository.TokenRepository,
-	client *platformservice.Client) error {
+	tokenRepo repository.TokenRepository) error {
 	categoryPath := "/goLootboxRollPluginDemo"
 	pdu := lootboxrolldemo.PlatformDataUnit{
-		CLIConfig:         config,
-		ConfigRepo:        configRepo,
-		TokenRepo:         tokenRepo,
-		PlatformClientSvc: client,
-		CurrencyCode:      "USDT1",
+		CLIConfig:    config,
+		ConfigRepo:   configRepo,
+		TokenRepo:    tokenRepo,
+		CurrencyCode: "USDT1",
 	}
 
 	// clean up
