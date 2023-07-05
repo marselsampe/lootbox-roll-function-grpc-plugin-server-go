@@ -223,6 +223,7 @@ func (p *PlatformDataUnit) UnsetPlatformServiceGrpcTarget() error {
 		ConfigRepository: p.ConfigRepo,
 		TokenRepository:  p.TokenRepo,
 	}
+
 	return servicePluginCfgWrapper.DeleteLootBoxPluginConfigShort(&service_plugin_config.DeleteLootBoxPluginConfigParams{
 		Namespace: p.CLIConfig.ABNamespace,
 	})
