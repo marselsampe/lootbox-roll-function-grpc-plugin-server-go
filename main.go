@@ -48,7 +48,7 @@ var (
 	metricsEndpoint = "/metrics"
 	metricsPort     = 8080
 	grpcPort        = 6565
-	serviceName     = server.GetEnv("OTEL_SERVICE_NAME", "LootboxRollFunctionServiceGoServerDocker")
+	serviceName     = server.GetEnv("OTEL_SERVICE_NAME", "LootBoxRollFunctionServiceGoServerDocker")
 )
 
 func main() {
