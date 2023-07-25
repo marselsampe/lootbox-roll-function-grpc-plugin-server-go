@@ -40,8 +40,8 @@ func InterceptorLogger(l logrus.FieldLogger) logging.Logger {
 	})
 }
 
-// LogJSONFormatter is printing the data in log
-func LogJSONFormatter(data interface{}) string {
+// logJSONFormatter is printing the data in log
+func logJSONFormatter(data interface{}) string {
 	response, err := json.Marshal(data)
 	if err != nil {
 		logrus.Errorf("failed to marshal json.")

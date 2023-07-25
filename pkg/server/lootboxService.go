@@ -15,18 +15,18 @@ import (
 	pb "lootbox-roll-function-grpc-plugin-server-go/pkg/pb"
 )
 
-type LootboxServiceServer struct {
+type LootBoxServiceServer struct {
 	pb.UnimplementedLootBoxServer
 }
 
-func NewLootboxServiceServer() *LootboxServiceServer {
+func NewLootBoxServiceServer() *LootBoxServiceServer {
 	rand.Seed(time.Now().Unix())
 
-	return &LootboxServiceServer{}
+	return &LootBoxServiceServer{}
 }
 
-func (s *LootboxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.RollLootBoxRewardsRequest) (*pb.RollLootBoxRewardsResponse, error) {
-	logrus.Infof("RollLootBoxRewards Request: %s", LogJSONFormatter(req))
+func (s *LootBoxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.RollLootBoxRewardsRequest) (*pb.RollLootBoxRewardsResponse, error) {
+	logrus.Infof("RollLootBoxRewards Request: %s", logJSONFormatter(req))
 	rewards := req.GetItemInfo().GetLootBoxRewards()
 	rewardWeightSum := 0
 	for _, r := range rewards {
@@ -57,7 +57,7 @@ func (s *LootboxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.Rol
 	}
 
 	response := &pb.RollLootBoxRewardsResponse{Rewards: resultItems}
-	logrus.Infof("RollLootBoxRewards Response: %s", LogJSONFormatter(response))
+	logrus.Infof("RollLootBoxRewards Response: %s", logJSONFormatter(response))
 
 	return response, nil
 }

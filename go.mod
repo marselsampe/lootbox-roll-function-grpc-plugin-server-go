@@ -4,8 +4,8 @@ go 1.19
 
 require (
 	github.com/AccelByte/accelbyte-go-sdk v0.48.0
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0-rc.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.5
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.15.1
 	github.com/sirupsen/logrus v1.9.2

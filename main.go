@@ -10,14 +10,17 @@ import (
 	"log"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/factory"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/service/iam"
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth/validator"
+	promgrpc "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -36,7 +39,6 @@ import (
 	"lootbox-roll-function-grpc-plugin-server-go/pkg/server"
 
 	sdkAuth "github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
-	prometheusGrpc "github.com/grpc-ecosystem/go-grpc-prometheus"
 	prometheusCollectors "github.com/prometheus/client_golang/prometheus/collectors"
 )
 
@@ -45,11 +47,16 @@ var (
 	id              = int64(1)
 	metricsEndpoint = "/metrics"
 	metricsPort     = 8080
-	port            = 6565
+	grpcPort        = 6565
 	serviceName     = server.GetEnv("OTEL_SERVICE_NAME", "LootboxRollFunctionServiceGoServerDocker")
 )
 
 func main() {
+	go func() {
+		runtime.SetBlockProfileRate(1)
+		runtime.SetMutexProfileFraction(10)
+	}()
+
 	logrus.Infof("starting app server..")
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -67,14 +74,15 @@ func main() {
 		logging.WithLevels(logging.DefaultClientCodeToLevel),
 		logging.WithDurationField(logging.DurationToDurationField),
 	}
+	srvMetrics := promgrpc.NewServerMetrics()
 	unaryServerInterceptors := []grpc.UnaryServerInterceptor{
 		otelgrpc.UnaryServerInterceptor(),
-		prometheusGrpc.UnaryServerInterceptor,
+		srvMetrics.UnaryServerInterceptor(),
 		logging.UnaryServerInterceptor(server.InterceptorLogger(logrus.New()), opts...),
 	}
 	streamServerInterceptors := []grpc.StreamServerInterceptor{
 		otelgrpc.StreamServerInterceptor(),
-		prometheusGrpc.StreamServerInterceptor,
+		srvMetrics.StreamServerInterceptor(),
 		logging.StreamServerInterceptor(server.InterceptorLogger(logrus.New()), opts...),
 	}
 
@@ -104,7 +112,7 @@ func main() {
 	)
 
 	// Register Filter Service
-	lootboxServiceServer := server.NewLootboxServiceServer()
+	lootboxServiceServer := server.NewLootBoxServiceServer()
 	pb.RegisterLootBoxServer(s, lootboxServiceServer)
 
 	// Enable gRPC Reflection
@@ -114,14 +122,13 @@ func main() {
 	// Enable gRPC Health Check
 	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
 
-	prometheusGrpc.Register(s)
-
 	// Register Prometheus Metrics
+	srvMetrics.InitializeMetrics(s)
 	prometheusRegistry := prometheus.NewRegistry()
 	prometheusRegistry.MustRegister(
 		prometheusCollectors.NewGoCollector(),
 		prometheusCollectors.NewProcessCollector(prometheusCollectors.ProcessCollectorOpts{}),
-		prometheusGrpc.DefaultServerMetrics,
+		srvMetrics,
 	)
 
 	go func() {
@@ -157,9 +164,9 @@ func main() {
 
 	// Start gRPC Server
 	logrus.Infof("starting gRPC server..")
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
-		logrus.Fatalf("failed to listen to tcp:%d: %v", port, err)
+		logrus.Fatalf("failed to listen to tcp:%d: %v", grpcPort, err)
 
 		return
 	}
