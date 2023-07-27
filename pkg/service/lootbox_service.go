@@ -2,15 +2,13 @@
 // This is licensed software from AccelByte Inc, for limitations
 // and restrictions contact your company contract manager.
 
-package server
+package service
 
 import (
 	"context"
 	"math"
 	"math/rand"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	pb "lootbox-roll-function-grpc-plugin-server-go/pkg/pb"
 )
@@ -26,7 +24,6 @@ func NewLootBoxServiceServer() *LootBoxServiceServer {
 }
 
 func (s *LootBoxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.RollLootBoxRewardsRequest) (*pb.RollLootBoxRewardsResponse, error) {
-	logrus.Infof("RollLootBoxRewards Request: %s", logJSONFormatter(req))
 	rewards := req.GetItemInfo().GetLootBoxRewards()
 	rewardWeightSum := 0
 	for _, r := range rewards {
@@ -56,10 +53,7 @@ func (s *LootBoxServiceServer) RollLootBoxRewards(_ context.Context, req *pb.Rol
 		})
 	}
 
-	response := &pb.RollLootBoxRewardsResponse{Rewards: resultItems}
-	logrus.Infof("RollLootBoxRewards Response: %s", logJSONFormatter(response))
-
-	return response, nil
+	return &pb.RollLootBoxRewardsResponse{Rewards: resultItems}, nil
 }
 
 func random(max int) float64 {

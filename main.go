@@ -35,20 +35,25 @@ import (
 	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 
+	"lootbox-roll-function-grpc-plugin-server-go/pkg/common"
 	pb "lootbox-roll-function-grpc-plugin-server-go/pkg/pb"
-	"lootbox-roll-function-grpc-plugin-server-go/pkg/server"
+	"lootbox-roll-function-grpc-plugin-server-go/pkg/service"
 
 	sdkAuth "github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth"
 	prometheusCollectors "github.com/prometheus/client_golang/prometheus/collectors"
 )
 
-var (
-	environment     = "production"
+const (
 	id              = int64(1)
+	environment     = "production"
 	metricsEndpoint = "/metrics"
 	metricsPort     = 8080
 	grpcPort        = 6565
-	serviceName     = server.GetEnv("OTEL_SERVICE_NAME", "LootBoxRollFunctionServiceGoServerDocker")
+)
+
+var (
+	serviceName = common.GetEnv("OTEL_SERVICE_NAME", "LootBoxRollFunctionServiceGoServerDocker")
+	logLevelStr = common.GetEnv("LOG_LEVEL", logrus.InfoLevel.String())
 )
 
 func main() {
@@ -62,8 +67,15 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	opts := []logging.Option{
-		logging.WithLogOnEvents(logging.StartCall, logging.FinishCall, logging.PayloadReceived, logging.PayloadSent),
+	logrusLevel, err := logrus.ParseLevel(logLevelStr)
+	if err != nil {
+		logrusLevel = logrus.InfoLevel
+	}
+	logrusLogger := logrus.New()
+	logrusLogger.SetLevel(logrusLevel)
+
+	loggingOptions := []logging.Option{
+		logging.WithLogOnEvents(logging.PayloadSent),
 		logging.WithFieldsFromContext(func(ctx context.Context) logging.Fields {
 			if span := trace.SpanContextFromContext(ctx); span.IsSampled() {
 				return logging.Fields{"traceID", span.TraceID().String()}
@@ -78,18 +90,16 @@ func main() {
 	unaryServerInterceptors := []grpc.UnaryServerInterceptor{
 		otelgrpc.UnaryServerInterceptor(),
 		srvMetrics.UnaryServerInterceptor(),
-		logging.UnaryServerInterceptor(server.InterceptorLogger(logrus.New()), opts...),
+		logging.UnaryServerInterceptor(common.InterceptorLogger(logrusLogger), loggingOptions...),
 	}
 	streamServerInterceptors := []grpc.StreamServerInterceptor{
 		otelgrpc.StreamServerInterceptor(),
 		srvMetrics.StreamServerInterceptor(),
-		logging.StreamServerInterceptor(server.InterceptorLogger(logrus.New()), opts...),
+		logging.StreamServerInterceptor(common.InterceptorLogger(logrusLogger), loggingOptions...),
 	}
 
-	if strings.ToLower(server.GetEnv("PLUGIN_GRPC_SERVER_AUTH_ENABLED", "false")) == "true" {
-		// unaryServerInterceptors = append(unaryServerInterceptors, server.EnsureValidToken) // deprecated
-
-		refreshInterval := server.GetEnvInt("REFRESH_INTERVAL", 600)
+	if strings.ToLower(common.GetEnv("PLUGIN_GRPC_SERVER_AUTH_ENABLED", "false")) == "true" {
+		refreshInterval := common.GetEnvInt("REFRESH_INTERVAL", 600)
 		configRepo := sdkAuth.DefaultConfigRepositoryImpl()
 		tokenRepo := sdkAuth.DefaultTokenRepositoryImpl()
 		authService := iam.OAuth20Service{
@@ -97,33 +107,33 @@ func main() {
 			ConfigRepository: configRepo,
 			TokenRepository:  tokenRepo,
 		}
-		server.Validator = validator.NewTokenValidator(authService, time.Duration(refreshInterval)*time.Second)
-		server.Validator.Initialize()
+		common.Validator = validator.NewTokenValidator(authService, time.Duration(refreshInterval)*time.Second)
+		common.Validator.Initialize()
 
-		unaryServerInterceptors = append(unaryServerInterceptors, server.UnaryAuthServerIntercept)
-		streamServerInterceptors = append(streamServerInterceptors, server.StreamAuthServerIntercept)
+		unaryServerInterceptors = append(unaryServerInterceptors, common.UnaryAuthServerIntercept)
+		streamServerInterceptors = append(streamServerInterceptors, common.StreamAuthServerIntercept)
 		logrus.Infof("added auth interceptors")
 	}
 
 	// Create gRPC Server
-	s := grpc.NewServer(
+	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(unaryServerInterceptors...),
 		grpc.ChainStreamInterceptor(streamServerInterceptors...),
 	)
 
 	// Register Filter Service
-	lootboxServiceServer := server.NewLootBoxServiceServer()
-	pb.RegisterLootBoxServer(s, lootboxServiceServer)
+	lootBoxServiceServer := service.NewLootBoxServiceServer()
+	pb.RegisterLootBoxServer(grpcServer, lootBoxServiceServer)
 
 	// Enable gRPC Reflection
-	reflection.Register(s)
+	reflection.Register(grpcServer)
 	logrus.Infof("gRPC reflection enabled")
 
 	// Enable gRPC Health Check
-	grpc_health_v1.RegisterHealthServer(s, health.NewServer())
+	grpc_health_v1.RegisterHealthServer(grpcServer, health.NewServer())
 
 	// Register Prometheus Metrics
-	srvMetrics.InitializeMetrics(s)
+	srvMetrics.InitializeMetrics(grpcServer)
 	prometheusRegistry := prometheus.NewRegistry()
 	prometheusRegistry.MustRegister(
 		prometheusCollectors.NewGoCollector(),
@@ -138,7 +148,7 @@ func main() {
 	logrus.Infof("serving prometheus metrics at: (:%d%s)", metricsPort, metricsEndpoint)
 
 	// Set Tracer Provider
-	tracerProvider, err := server.NewTracerProvider(serviceName, environment, id)
+	tracerProvider, err := common.NewTracerProvider(serviceName, environment, id)
 	if err != nil {
 		logrus.Fatalf("failed to create tracer provider: %v", err)
 
@@ -171,7 +181,7 @@ func main() {
 		return
 	}
 	go func() {
-		if err = s.Serve(lis); err != nil {
+		if err = grpcServer.Serve(lis); err != nil {
 			logrus.Fatalf("failed to run gRPC server: %v", err)
 
 			return
