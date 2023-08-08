@@ -22,6 +22,7 @@ import (
 	"github.com/AccelByte/accelbyte-go-sdk/services-api/pkg/utils/auth/validator"
 	promgrpc "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	gdprsdk "github.com/marselsampe/accelbyte-gdpr-sdk"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -124,6 +125,19 @@ func main() {
 	// Register Filter Service
 	lootBoxServiceServer := service.NewLootBoxServiceServer()
 	pb.RegisterLootBoxServer(grpcServer, lootBoxServiceServer)
+
+	gdprSDK := gdprsdk.NewGrpcSDK()
+	gdprSDK.SetDataGenerationHandler(func(namespace, userID string) ([]byte, error) {
+		logrus.Info("Invoke data generation handler")
+		logrus.Info("collecting user data")
+		return []byte("{\"data\":\"lorem ipsum dolor sit amet\"}"), nil
+	})
+	gdprSDK.SetDataDeletionHandler(func(namespace, userID string) error {
+		logrus.Info("Invoke data deletion handler")
+		logrus.Info("deleting user data")
+		return nil
+	})
+	gdprSDK.RegisterGRPC(grpcServer)
 
 	// Enable gRPC Reflection
 	reflection.Register(grpcServer)
